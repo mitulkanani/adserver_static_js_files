@@ -68,7 +68,7 @@
         adServerContainer.append(adServerLink);
         adObject[0].appendChild(adServerContainer);
       };
-      xhr.open("POST", "https://ad-server-services.onrender.com/");
+      xhr.open("POST", "https://adserverbackend.onrender.com/");
       xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
       xhr.send(`adZoneCode=${adObjectRender}`);
     } else {
