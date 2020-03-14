@@ -1,4 +1,4 @@
-(function() {
+(async function() {
   var styles = `
    .adsbyadserver{
      display: inline-block;
@@ -28,51 +28,65 @@
   document.head.appendChild(styleSheet);
   var adObject = document.getElementsByClassName("adsbyadserver");
   if (adObject.length > 0) {
-    const adObjectRender = adObject[0].getAttribute("data-ad-client");
-    if (adObjectRender !== undefined && adObjectRender !== "") {
+    var xhr = [];
+    (async function loop() {
       // Set up our HTTP request
-      var xhr = new XMLHttpRequest();
       // Setup our listener to process completed requests
-      xhr.onload = function() {
-        // Main Container
-        var adServerContainer = document.createElement("div");
-        adServerContainer.className = "adserver-container";
 
-        // Main Container
-        var adServerLabel = document.createElement("span");
-        adServerLabel.className = "adserver-label";
-        adServerLabel.textContent = "By AdServer";
-        adServerContainer.appendChild(adServerLabel);
+      // const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+      for (let i = 0; i < adObject.length; i++) {
+        const adObjectRender = adObject[i].getAttribute("data-ad-client");
+        if (adObjectRender !== undefined && adObjectRender !== "") {
+          xhr[i] = new XMLHttpRequest();
+          // await delay(Math.random() * 1000);
+          await xhr[i].open("POST", "https://adserverbackend.onrender.com/");
+          await xhr[i].setRequestHeader(
+            "Content-type",
+            "application/x-www-form-urlencoded"
+          );
+          xhr[i].onreadystatechange = function() {
+            if (xhr[i].readyState === 4 && xhr[i].status === 200) {
+              var adServerContainer = document.createElement("div");
+              adServerContainer.className = "adserver-container";
 
-        // -> LinkContainer
-        var adServerLink = document.createElement("a");
-        adServerLink.className = "link-container";
+              // Main Container
+              var adServerLabel = document.createElement("span");
+              adServerLabel.className = "adserver-label";
+              adServerLabel.textContent = "By AdServer";
+              adServerContainer.appendChild(adServerLabel);
 
-        // Ad Image Container
-        var image = document.createElement("img");
-        image.className = "adserver-img";
-        const jsonObj = JSON.parse(xhr.response);
-        if (xhr.status >= 200 && xhr.status < 300) {
-          // Setting up div height and width
-          adServerContainer.style.width = `${jsonObj.data.width}px`;
-          adServerContainer.style.height = `${jsonObj.data.height}px`;
+              // -> LinkContainer
+              var adServerLink = document.createElement("a");
+              adServerLink.className = "link-container";
 
-          // Setting up image for adserver
-          adServerLink.href = `${jsonObj.data.url}`;
-          adServerLink.target = "_blank";
-          image.src = `${jsonObj.data.banner}`;
+              // Ad Image Container
+              var image = document.createElement("img");
+              image.className = "adserver-img";
+              const jsonObj = JSON.parse(xhr[i].response);
+              if (xhr[i].status >= 200 && xhr[i].status < 300) {
+                // Setting up div height and width
+                adServerContainer.style.width = `${jsonObj.data.width}px`;
+                adServerContainer.style.height = `${jsonObj.data.height}px`;
+
+                // Setting up image for adserver
+                adServerLink.href = `${jsonObj.data.url}`;
+                adServerLink.target = "_blank";
+                image.src = `${jsonObj.data.banner}`;
+              } else {
+                image.alt = `${jsonObj.errorMessage}`;
+              }
+              adServerLink.appendChild(image);
+              adServerContainer.append(adServerLink);
+              // eslint-disable-next-line
+              let value = parseInt(`${jsonObj.data.adPosition}`);
+              adObject[value].appendChild(adServerContainer);
+            }
+          };
+          await xhr[i].send(`adZoneCode=${adObjectRender}&adPosition=${i}`);
         } else {
-          image.alt = `${jsonObj.errorMessage}`;
+          console.log("Please Add Campaign Key");
         }
-        adServerLink.appendChild(image);
-        adServerContainer.append(adServerLink);
-        adObject[0].appendChild(adServerContainer);
-      };
-      xhr.open("POST", "https://adserverbackend.onrender.com/");
-      xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-      xhr.send(`adZoneCode=${adObjectRender}`);
-    } else {
-      console.log("Please Add Campaign Key");
-    }
+      }
+    })();
   }
-}.call(this));
+}.call(window.onload));
